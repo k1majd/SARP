@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "sarp"
+version = "0.1.0"
+description = "This package provides code for running the examples for the paper titled, Safety-aware Neural Network Repair for Robotic Systems with Predictive Models"
+authors = ["k1majd <keyvan.majd@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.10"
+numpy = "1.20.0"
+tensorflow = "2.7.0"
+matplotlib = "^3.7.1"
+black = "^23.3.0"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
