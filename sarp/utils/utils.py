@@ -65,7 +65,7 @@ def load_raw(read_dir, num_samples, num_inflate):
     return poses, scans, vels, hits
 
 
-def load_data(read_dir, num_samples, num_inflate=5):
+def load_expert_data(read_dir, num_samples, num_inflate=5):
     goal = [
         np.array([-10.0, 10]),
         np.array([-10.0, 5.0]),
@@ -115,6 +115,75 @@ def load_data(read_dir, num_samples, num_inflate=5):
     # plt.show()
 
     return x, y_ctrl, y_trans, y_col
+
+
+def process_scan(scan):
+    scan_list = []
+    for i in range(scan.shape[0]):
+        if len(scan[i]) < 10:
+            scan_list.append(
+                [
+                    np.inf,
+                    np.inf,
+                    np.inf,
+                    np.inf,
+                    np.inf,
+                    np.inf,
+                    np.inf,
+                    np.inf,
+                    np.inf,
+                    np.inf,
+                ]
+            )
+        else:
+            scan_list.append(scan[i])
+
+    return np.array(scan_list)
+
+
+def load_wander_data(read_dir, num_samples, num_inflate=5):
+    hits = []
+    scans = []
+    for i in range(num_samples):
+        scan = np.load(read_dir + f"/sample{i+1}/scans.npy", allow_pickle=True)
+        scan = process_scan(scan)
+        # scan = scan.astype(np.float32)
+        scan[scan == np.inf] = 3.0
+        hit = np.load(read_dir + f"/sample{i+1}/hit.npy", allow_pickle=True)
+        hit = hit.astype(np.int32)
+        hit = hit.reshape(-1, 1)
+        for j in range(num_inflate):
+            hit = inflate_hit(hit)
+            hit = inflate_hit(hit)
+        idx_start = 0
+        idx_end = hit.shape[0]
+        search = False
+        for j in range(hit.shape[0] - 1):
+            if hit[j] == 0 and hit[j + 1] == 1:
+                search = True
+                gap_0 = j - idx_start + 1
+
+            if search and hit[j] == 1 and hit[j + 1] == 0:
+                gap_1 = j - gap_0 - idx_start + 1
+                if gap_0 > gap_1:
+                    idx_end = j + 1
+                else:
+                    idx_end = idx_start + 2 * gap_0
+                search = False
+                hit_arr = np.concatenate(
+                    (1 - hit[idx_start:idx_end], hit[idx_start:idx_end]), axis=1
+                )
+                hits.append(hit_arr)
+                scans.append(scan[idx_start:idx_end])
+                idx_start = j + 1
+        if search == True:
+            hit_arr = np.concatenate(
+                (1 - hit[idx_start : hit.shape[0]], hit[idx_start : hit.shape[0]]),
+                axis=1,
+            )
+            hits.append(hit_arr)
+            scans.append(scan[idx_start : hit.shape[0]])
+    return hits, scans
 
 
 def separate_train_test(data, test_ratio=0.2):

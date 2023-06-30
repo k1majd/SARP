@@ -1,8 +1,7 @@
 import os
 from tensorflow import keras
 import tensorflow as tf
-from sarp.utils import load_data, separate_train_test, curriculum_training
-import numpy as np
+from sarp.utils import load_expert_data, separate_train_test, curriculum_training
 
 if __name__ == "__main__":
     batch_size = 32
@@ -14,7 +13,7 @@ if __name__ == "__main__":
     data_dir = os.path.dirname(os.path.realpath(__file__)) + f"/data/expert_data"
     num_samples = len(os.listdir(data_dir))
 
-    state, action, _, _ = load_data(data_dir, num_samples)
+    state, action, _, _ = load_expert_data(data_dir, num_samples)
     train_data, test_data = separate_train_test([state, action], test_ratio=0.2)
 
     state_train, action_train = train_data
@@ -47,24 +46,24 @@ if __name__ == "__main__":
             monitor="val_loss", patience=10, restore_best_weights=True
         ),
     ]
-    model.fit(
-        tf.concat(state_train, 0),
-        tf.concat(action_train, 0),
-        batch_size=batch_size,
-        epochs=num_epochs,
-        validation_data=(tf.concat(state_test, 0), tf.concat(action_test, 0)),
-        callbacks=tf_callback,
-    )
-    # curriculum_training(
-    #     model,
-    #     state_train,
-    #     action_train,
-    #     state_test,
-    #     action_test,
-    #     epochs=num_epochs,
+    # model.fit(
+    #     tf.concat(state_train, 0),
+    #     tf.concat(action_train, 0),
     #     batch_size=batch_size,
-    #     learning_rate=learning_rate,
+    #     epochs=num_epochs,
+    #     validation_data=(tf.concat(state_test, 0), tf.concat(action_test, 0)),
+    #     callbacks=tf_callback,
     # )
+    curriculum_training(
+        model,
+        state_train,
+        action_train,
+        state_test,
+        action_test,
+        epochs=num_epochs,
+        batch_size=batch_size,
+        learning_rate=learning_rate,
+    )
     # save model
     current_dir = os.path.dirname(os.path.realpath(__file__))
     if not os.path.exists(current_dir + f"/trained_models/policy"):
