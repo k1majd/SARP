@@ -40,7 +40,7 @@ def angular_diff(x, y):  # angular difference
     return np.arctan2(np.sin(d), np.cos(d))  # type: ignore
 
 
-def load_raw(read_dir, num_samples, num_inflate):
+def load_raw(read_dir, num_samples, num_inflate=5):
     poses = []
     scans = []
     vels = []
@@ -115,6 +115,55 @@ def load_expert_data(read_dir, num_samples, num_inflate=5):
     # plt.show()
 
     return x, y_ctrl, y_trans, y_col
+
+
+def load_transition_data(read_dir, num_samples):
+    goal = [
+        np.array([-10.0, 10]),
+        np.array([-10.0, 5.0]),
+        np.array([-9.0, -9.0]),
+        np.array([10.0, 10.0]),
+        np.array([10.0, 5.0]),
+        np.array([9.0, -9.0]),
+    ]
+    pos, scans, vel, _ = load_raw(read_dir, num_samples)
+    # x should include [distance to goal, angle to goal, scan data]
+    x = []
+    # y should include [linear velocity, angular velocity]
+    y = []
+    for i in range(num_samples):
+        goal_pose = retrieve_goal(goal, pos[i][-1, :2])
+        print(f"Sample: {i+1}, goal: {goal_pose}")
+        traj_x = []
+        traj_y = []
+        ids = detect_idle_indices_of_robot(vel[i])
+        for j in range(ids[0], ids[1]):
+            dist, ang = calc_distance_and_angle(pos[i][j, :2], goal_pose)
+            inp = np.concatenate(
+                (
+                    goal_pose,
+                    np.array(
+                        [
+                            dist,
+                            angular_diff(ang, pos[i][j, 2]),
+                        ]
+                    ),
+                    scans[i][j],
+                )
+            )
+            traj_x.append(
+                np.concatenate(
+                    (
+                        inp,
+                        vel[i][j],
+                    )
+                )
+            )
+            traj_y.append(scans[i][j + 1])
+        x.append(np.array(traj_x))
+        y.append(np.array(traj_y))
+
+    return x, y
 
 
 def process_scan(scan):

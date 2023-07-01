@@ -2,7 +2,7 @@ import os
 from tensorflow import keras
 import tensorflow as tf
 import numpy as np
-from sarp.utils import load_wander_data, separate_train_test, load_expert_data
+from sarp.utils import load_wander_data, separate_train_test, load_transition_data
 
 if __name__ == "__main__":
     ############################
@@ -17,13 +17,13 @@ if __name__ == "__main__":
     data_dir = os.path.dirname(os.path.realpath(__file__)) + f"/data/expert_data"
     num_samples = len(os.listdir(data_dir))
 
-    state, _, next_state, _ = load_expert_data(data_dir, num_samples)
+    state_action, next_state = load_transition_data(data_dir, num_samples)
     train_data, test_data = separate_train_test(
-        [state, next_state], test_ratio=1 - train_ratio_tran
+        [state_action, next_state], test_ratio=1 - train_ratio_tran
     )
 
-    state_train, next_state_train = train_data
-    state_test, next_state_test = test_data
+    state_action_train, next_state_train = train_data
+    state_action_test, next_state_test = test_data
 
     # build model
     model_tran = keras.Sequential(
@@ -53,11 +53,14 @@ if __name__ == "__main__":
         ),
     ]
     model_tran.fit(
-        tf.concat(state_train, 0),
+        tf.concat(state_action_train, 0),
         tf.concat(next_state_train, 0),
         batch_size=batch_size_tran,
         epochs=num_epochs_tran,
-        validation_data=(tf.concat(state_test, 0), tf.concat(next_state_test, 0)),
+        validation_data=(
+            tf.concat(state_action_test, 0),
+            tf.concat(next_state_test, 0),
+        ),
         callbacks=tf_callback,
     )
 
@@ -129,7 +132,7 @@ if __name__ == "__main__":
             keras.layers.Dense(2, activation="softmax"),
         ]
     )
-    model_predictive.predict(state_test[0][0:1])
+    model_predictive.predict(state_action_test[0][0:1])
     # substitute the weights of model_tran and model_col
     model_predictive.layers[0].set_weights(model_tran.layers[0].get_weights())
     model_predictive.layers[1].set_weights(model_tran.layers[1].get_weights())

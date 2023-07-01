@@ -36,3 +36,4 @@ examples/1_hospital_simulation/data/wander_data/sample6
 examples/1_hospital_simulation/data/wander_data/sample7
 examples/1_hospital_simulation/data/wander_data/sample8
 examples/1_hospital_simulation/data/wander_data/sample9
+poetry.lock
