@@ -1,7 +1,11 @@
 import os
 from tensorflow import keras
 import tensorflow as tf
-from sarp.utils import load_expert_data, separate_train_test, curriculum_training
+from sarp.utils import (
+    load_expert_data_hospital,
+    separate_train_test,
+    curriculum_training,
+)
 
 if __name__ == "__main__":
     batch_size = 32
@@ -13,7 +17,7 @@ if __name__ == "__main__":
     data_dir = os.path.dirname(os.path.realpath(__file__)) + f"/data/expert_data"
     num_samples = len(os.listdir(data_dir))
 
-    state, action, _, _ = load_expert_data(data_dir, num_samples)
+    state, action, _, _ = load_expert_data_hospital(data_dir, num_samples)
     train_data, test_data = separate_train_test([state, action], test_ratio=0.2)
 
     state_train, action_train = train_data

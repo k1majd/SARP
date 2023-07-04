@@ -1,5 +1,100 @@
 import numpy as np
 from tensorflow import keras
+import tensorflow as tf
+
+
+class RepairModel(tf.keras.Model):
+    def __init__(
+        self,
+        regularizer_rate,
+        policy_arch,
+        predictive_arch,
+        activ_policy,
+        activ_predictive,
+    ):
+        super(RepairModel, self).__init__()
+        self.layer_list = []
+        self.policy_arch = policy_arch
+        self.predictive_arch = predictive_arch
+
+        # construct policy network
+        self.layer_list.append(
+            tf.keras.layers.Dense(
+                policy_arch[1],
+                activation=activ_policy[0],
+                kernel_regularizer=tf.keras.regularizers.l2(regularizer_rate),
+                bias_regularizer=tf.keras.regularizers.l2(regularizer_rate),
+                input_shape=(policy_arch[0],),
+                dtype=tf.float32,
+                name="policy_layer_1",
+            )
+        )
+        for i in range(2, len(policy_arch) - 1):
+            self.layer_list.append(
+                tf.keras.layers.Dense(
+                    policy_arch[i],
+                    activation=activ_policy[i - 1],
+                    kernel_regularizer=tf.keras.regularizers.l2(regularizer_rate),
+                    bias_regularizer=tf.keras.regularizers.l2(regularizer_rate),
+                    dtype=tf.float32,
+                    name=f"policy_layer_{i}",
+                )
+            )
+        self.layer_list.append(
+            tf.keras.layers.Dense(
+                policy_arch[-1],
+                activation=activ_policy[-1],
+                kernel_regularizer=tf.keras.regularizers.l2(regularizer_rate),
+                bias_regularizer=tf.keras.regularizers.l2(regularizer_rate),
+                dtype=tf.float32,
+                name=f"policy_layer_{len(policy_arch)-1}",
+            )
+        )
+
+        # construct predictive network
+        self.layer_list.append(
+            tf.keras.layers.Dense(
+                predictive_arch[1],
+                activation=activ_predictive[0],
+                kernel_regularizer=tf.keras.regularizers.l2(regularizer_rate),
+                bias_regularizer=tf.keras.regularizers.l2(regularizer_rate),
+                input_shape=(predictive_arch[0],),
+                dtype=tf.float32,
+                name="Predictive_layer_1",
+            )
+        )
+        for i in range(2, len(predictive_arch) - 1):
+            self.layer_list.append(
+                tf.keras.layers.Dense(
+                    predictive_arch[i],
+                    activation=activ_predictive[i - 1],
+                    kernel_regularizer=tf.keras.regularizers.l2(regularizer_rate),
+                    bias_regularizer=tf.keras.regularizers.l2(regularizer_rate),
+                    dtype=tf.float32,
+                    name=f"Predictive_layer_{i}",
+                )
+            )
+        self.layer_list.append(
+            tf.keras.layers.Dense(
+                predictive_arch[-1],
+                activation=activ_predictive[-1],
+                kernel_regularizer=tf.keras.regularizers.l2(regularizer_rate),
+                bias_regularizer=tf.keras.regularizers.l2(regularizer_rate),
+                dtype=tf.float32,
+                name=f"Predictive_layer_{len(predictive_arch)-1}",
+            )
+        )
+
+    def call(self, s_0, training=False):
+        a = self.layer_list[0](s_0)
+        for l in range(1, len(self.policy_arch) - 1):
+            a = self.layer_list[l](a)
+        s1 = self.layer_list[len(self.policy_arch) - 1](tf.concat((s_0, a), 1))
+        for l in range(
+            len(self.policy_arch), len(self.policy_arch) + len(self.predictive_arch) - 2
+        ):
+            s1 = self.layer_list[l](s1)
+        return a, s1
 
 
 def inflate_hit(hit):
@@ -65,7 +160,7 @@ def load_raw(read_dir, num_samples, num_inflate=5):
     return poses, scans, vels, hits
 
 
-def load_expert_data(read_dir, num_samples, num_inflate=5):
+def load_expert_data_hospital(read_dir, num_samples, num_inflate=5):
     goal = [
         np.array([-10.0, 10]),
         np.array([-10.0, 5.0]),
@@ -117,7 +212,67 @@ def load_expert_data(read_dir, num_samples, num_inflate=5):
     return x, y_ctrl, y_trans, y_col
 
 
-def load_transition_data(read_dir, num_samples):
+def give_arch(model):
+    arch = []
+    activation = []
+    for l in range(len(model.layers)):
+        type_lay = len(model.layers[l].output_shape)
+        if type_lay == 2:
+            in_shape = model.layers[l].input_shape[1]
+            out_shape = model.layers[l].output_shape[1]
+        else:
+            in_shape = model.layers[l].input_shape[0][1]
+            out_shape = model.layers[l].output_shape[0][1]
+        if l == 0:
+            if in_shape != out_shape:
+                arch.append(in_shape)
+
+        arch.append(out_shape)
+        activation.append(model.layers[l].activation.__name__)
+
+    return arch, activation
+
+
+def assign_weights(model_new, policy, predictive):
+    weights_ctrl = policy.get_weights()
+    weights_trans = predictive.get_weights()
+    for l in range(len(model_new.policy_arch) - 1):
+        model_new.layer_list[l].set_weights(
+            [weights_ctrl[2 * l], weights_ctrl[2 * l + 1]]
+        )
+    for l in range(len(model_new.predictive_arch) - 1):
+        model_new.layer_list[l + len(model_new.policy_arch) - 1].set_weights(
+            [weights_trans[2 * l], weights_trans[2 * l + 1]]
+        )
+
+
+def combine_nets(
+    policy,
+    predictive,
+    regularizer_rate=0.001,
+):
+    arch_model_policy, activ_policy = give_arch(policy)
+    arch_model_predictive, activ_predictive = give_arch(predictive)
+
+    # construct model
+    model = RepairModel(
+        regularizer_rate,
+        arch_model_policy,
+        arch_model_predictive,
+        activ_policy,
+        activ_predictive,
+    )
+    # build model
+    _, _ = model(tf.random.uniform((1, arch_model_policy[0]), dtype=tf.float32))
+    # assign weights
+    assign_weights(model, policy, predictive)
+
+    model.summary()
+
+    return model
+
+
+def load_transition_data_hospital(read_dir, num_samples):
     goal = [
         np.array([-10.0, 10]),
         np.array([-10.0, 5.0]),
@@ -190,7 +345,7 @@ def process_scan(scan):
     return np.array(scan_list)
 
 
-def load_wander_data(read_dir, num_samples, num_inflate=5):
+def load_wander_data_hospital(read_dir, num_samples, num_inflate=5):
     hits = []
     scans = []
     for i in range(num_samples):

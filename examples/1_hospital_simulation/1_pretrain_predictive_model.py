@@ -2,7 +2,12 @@ import os
 from tensorflow import keras
 import tensorflow as tf
 import numpy as np
-from sarp.utils import load_wander_data, separate_train_test, load_transition_data
+from sarp.utils import (
+    load_wander_data_hospital,
+    separate_train_test,
+    load_transition_data_hospital,
+    combine_nets,
+)
 
 if __name__ == "__main__":
     ############################
@@ -17,7 +22,7 @@ if __name__ == "__main__":
     data_dir = os.path.dirname(os.path.realpath(__file__)) + f"/data/expert_data"
     num_samples = len(os.listdir(data_dir))
 
-    state_action, next_state = load_transition_data(data_dir, num_samples)
+    state_action, next_state = load_transition_data_hospital(data_dir, num_samples)
     train_data, test_data = separate_train_test(
         [state_action, next_state], test_ratio=1 - train_ratio_tran
     )
@@ -75,7 +80,7 @@ if __name__ == "__main__":
     # load the collision data
     data_dir = os.path.dirname(os.path.realpath(__file__)) + f"/data/wander_data"
     num_samples = len(os.listdir(data_dir))
-    hits, scans = load_wander_data(data_dir, num_samples)
+    hits, scans = load_wander_data_hospital(data_dir, num_samples)
 
     # shuffle hits and scans lists
     c = list(zip(hits, scans))
