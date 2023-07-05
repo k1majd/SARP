@@ -7,4 +7,5 @@ __all__ = [
     "separate_train_test",
     "curriculum_training",
     "load_transition_data_hospital",
+    "mini_batch",
 ]

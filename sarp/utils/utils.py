@@ -476,3 +476,27 @@ def curriculum_training(
             callbacks=tf_callback,
         )
         epochs += 1
+
+
+def mini_batch(state, action, property, batchSize):
+    numObs = state.shape[0]
+    batches = []
+    batchNum = int(np.floor(numObs / batchSize))
+
+    if numObs % batchSize == 0:
+        for i in range(batchNum):
+            state_batch = state[i * batchSize : (i + 1) * batchSize, :]
+            action_batch = action[i * batchSize : (i + 1) * batchSize, :]
+            property_batch = property[i * batchSize : (i + 1) * batchSize, :]
+            batches.append((state_batch, action_batch, property_batch))
+    else:
+        for i in range(batchNum):
+            state_batch = state[i * batchSize : (i + 1) * batchSize, :]
+            action_batch = action[i * batchSize : (i + 1) * batchSize, :]
+            property_batch = property[i * batchSize : (i + 1) * batchSize, :]
+            batches.append((state_batch, action_batch, property_batch))
+        state_batch = state[batchNum * batchSize :, :]
+        action_batch = action[batchNum * batchSize :, :]
+        property_batch = property[batchNum * batchSize :, :]
+        batches.append((state_batch, action_batch, property_batch))
+    return batches
