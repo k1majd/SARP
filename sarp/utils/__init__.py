@@ -8,4 +8,5 @@ __all__ = [
     "curriculum_training",
     "load_transition_data_hospital",
     "mini_batch",
+    "load_expert_data_prosthesis",
 ]

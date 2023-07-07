@@ -135,7 +135,7 @@ def angular_diff(x, y):  # angular difference
     return np.arctan2(np.sin(d), np.cos(d))  # type: ignore
 
 
-def load_raw(read_dir, num_samples, num_inflate=5):
+def load_raw_hospital(read_dir, num_samples, num_inflate=5):
     poses = []
     scans = []
     vels = []
@@ -159,6 +159,101 @@ def load_raw(read_dir, num_samples, num_inflate=5):
 
     return poses, scans, vels, hits
 
+def load_raw_prosthesis(read_dir, data_type):
+    ttv_list = ["train", "validation", "test"]
+    data = []
+    for ttv in ttv_list:
+        data.append(np.load(f"{read_dir}/{data_type}_{ttv}.npy", allow_pickle=True))
+    
+    return data[0], data[1], data[2]
+
+def process_prosthesis_data(ankle, joint, force, hist_h, ctrl_h, type):
+    pad = hist_h + ctrl_h
+
+    if type =="full_obs":
+        state = np.array([]).reshape(0, (joint.shape[1] + force.shape[1]) * hist_h)
+    elif type == "partial_obs":
+        state = np.array([]).reshape(0, joint.shape[1] * hist_h)
+
+    action = np.array([]).reshape(0, ctrl_h)
+    property = np.array([]).reshape(0, force.shape[1]*ctrl_h)
+
+    for i in range(ankle.shape[0] - pad):
+        temp_state = np.array([]).reshape(1, 0)
+
+        # form state 
+        for j in range(hist_h):
+            temp_state = np.concatenate(
+                (temp_state, joint[i + j, :].reshape(1, -1)), axis=1
+            )
+            if type =="full_obs":
+                temp_state = np.concatenate(
+                    (temp_state, force[i + j, :].reshape(1, -1)), axis=1
+                )
+        state = np.concatenate((state, temp_state), axis=0)
+
+        # form policy and property
+        temp_policy = np.array([]).reshape(1, 0)
+        temp_property = np.array([]).reshape(1, 0)
+
+        for j in range(ctrl_h):
+            temp_policy = np.concatenate(
+                (temp_policy, ankle[i + j + hist_h, :].reshape(1, -1)), axis=1
+            )
+            temp_property = np.concatenate(
+                (temp_property, force[i + j + hist_h, :].reshape(1, -1)), axis=1
+            )
+        action = np.concatenate((action, temp_policy), axis=0)
+        property = np.concatenate((property, temp_property), axis=0)
+    
+    return state, action, property
+
+def load_expert_data_prosthesis(read_dir, hist_h, ctrl_h, type="full_obs"):
+    
+    # load data
+    (
+        ankle_train, 
+        ankle_val, 
+        ankle_test,
+    ) = load_raw_prosthesis(read_dir, "dankle")
+    (
+        joints_train,
+        joints_tibia_val, 
+        joints_test,
+    ) = load_raw_prosthesis(read_dir, "dfemur_dtibia")
+    (
+        force_train,
+        force_val,
+        force_test,
+    ) = load_raw_prosthesis(read_dir, "force")
+
+    # Create training data
+    state_train, action_train, property_train = process_prosthesis_data(
+        ankle_train, joints_train, force_train, hist_h, ctrl_h, type
+    )
+
+    # Create validation data
+    state_val, action_val, property_val = process_prosthesis_data(
+        ankle_val, joints_tibia_val, force_val, hist_h, ctrl_h, type
+    )
+
+    # Create test data
+    state_test, action_test, property_test = process_prosthesis_data(
+        ankle_test, joints_test, force_test, hist_h, ctrl_h, type
+    )
+
+    return [
+        state_train,
+        action_train,
+        property_train,
+        state_val,
+        action_val,
+        property_val,
+        state_test,
+        action_test,
+        property_test,
+    ]
+
 
 def load_expert_data_hospital(read_dir, num_samples, num_inflate=5, col_remove=False):
     goal = [
@@ -169,7 +264,7 @@ def load_expert_data_hospital(read_dir, num_samples, num_inflate=5, col_remove=F
         np.array([10.0, 5.0]),
         np.array([9.0, -9.0]),
     ]
-    poses, scans, vels, hits = load_raw(read_dir, num_samples, num_inflate)
+    poses, scans, vels, hits = load_raw_hospital(read_dir, num_samples, num_inflate)
     x = []
     y_ctrl = []
     y_trans = []
@@ -188,7 +283,7 @@ def load_expert_data_hospital(read_dir, num_samples, num_inflate=5, col_remove=F
             if col_remove == False:
                 traj_x.append(
                     np.concatenate(
-                        (
+                    (
                             goal_pose,
                             np.array(
                                 [
@@ -302,7 +397,7 @@ def load_transition_data_hospital(read_dir, num_samples):
         np.array([10.0, 5.0]),
         np.array([9.0, -9.0]),
     ]
-    pos, scans, vel, _ = load_raw(read_dir, num_samples)
+    pos, scans, vel, _ = load_raw_hospital(read_dir, num_samples)
     # x should include [distance to goal, angle to goal, scan data]
     x = []
     # y should include [linear velocity, angular velocity]
