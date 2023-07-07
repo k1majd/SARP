@@ -160,7 +160,7 @@ def load_raw(read_dir, num_samples, num_inflate=5):
     return poses, scans, vels, hits
 
 
-def load_expert_data_hospital(read_dir, num_samples, num_inflate=5):
+def load_expert_data_hospital(read_dir, num_samples, num_inflate=5, col_remove=False):
     goal = [
         np.array([-10.0, 10]),
         np.array([-10.0, 5.0]),
@@ -185,23 +185,44 @@ def load_expert_data_hospital(read_dir, num_samples, num_inflate=5):
         # plt.plot(poses[i][ids[0] : ids[1], 0], poses[i][ids[0] : ids[1], 1])
         for j in range(ids[0], ids[1]):
             dist, ang = calc_distance_and_angle(poses[i][j, :2], goal_pose)
-            traj_x.append(
-                np.concatenate(
-                    (
-                        goal_pose,
-                        np.array(
-                            [
-                                dist,
-                                angular_diff(ang, poses[i][j, 2]),
-                            ]
-                        ),
-                        scans[i][j],
+            if col_remove == False:
+                traj_x.append(
+                    np.concatenate(
+                        (
+                            goal_pose,
+                            np.array(
+                                [
+                                    dist,
+                                    angular_diff(ang, poses[i][j, 2]),
+                                ]
+                            ),
+                            scans[i][j],
+                        )
                     )
                 )
-            )
-            traj_y_ctrl.append(vels[i][j])
-            traj_y_trans.append(scans[i][j + 1])
-            traj_y_col.append(hits[i][j + 1])
+                traj_y_ctrl.append(vels[i][j])
+                traj_y_trans.append(scans[i][j + 1])
+                traj_y_col.append(hits[i][j + 1])
+            else:
+                if np.where(scans[i][j]<=0.3)[0].shape[0] == 0:
+                    traj_x.append(
+                        np.concatenate(
+                            (
+                                goal_pose,
+                                np.array(
+                                    [
+                                        dist,
+                                        angular_diff(ang, poses[i][j, 2]),
+                                    ]
+                                ),
+                                scans[i][j],
+                            )
+                        )
+                    )
+                    traj_y_ctrl.append(vels[i][j])
+                    traj_y_trans.append(scans[i][j + 1])
+                    traj_y_col.append(hits[i][j + 1])
+
         x.append(np.array(traj_x))
         y_ctrl.append(np.array(traj_y_ctrl))
         y_trans.append(np.array(traj_y_trans))

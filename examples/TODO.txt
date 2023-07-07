@@ -1,2 +1,0 @@
-1. Remove the samples that are already causing collisions
-2. Save the best model
