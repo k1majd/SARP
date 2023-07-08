@@ -1,11 +1,7 @@
 import os
 from tensorflow import keras
-import tensorflow as tf
-import csv
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-import copy
 from sarp.utils import (
     load_expert_data_prosthesis
 )

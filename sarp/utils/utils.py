@@ -11,11 +11,13 @@ class RepairModel(tf.keras.Model):
         predictive_arch,
         activ_policy,
         activ_predictive,
+        state_indices_passed,
     ):
         super(RepairModel, self).__init__()
         self.layer_list = []
         self.policy_arch = policy_arch
         self.predictive_arch = predictive_arch
+        self.state_indices_passed = state_indices_passed
 
         # construct policy network
         self.layer_list.append(
@@ -89,7 +91,9 @@ class RepairModel(tf.keras.Model):
         a = self.layer_list[0](s_0)
         for l in range(1, len(self.policy_arch) - 1):
             a = self.layer_list[l](a)
-        s1 = self.layer_list[len(self.policy_arch) - 1](tf.concat((s_0, a), 1))
+        s1 = self.layer_list[len(self.policy_arch) - 1](
+            tf.concat((tf.gather(s_0, self.state_indices_passed, axis=1), a), 1)
+            )
         for l in range(
             len(self.policy_arch), len(self.policy_arch) + len(self.predictive_arch) - 2
         ):
@@ -365,6 +369,7 @@ def assign_weights(model_new, policy, predictive):
 def combine_nets(
     policy,
     predictive,
+    state_indices_passed,
     regularizer_rate=0.001,
 ):
     arch_model_policy, activ_policy = give_arch(policy)
@@ -377,6 +382,7 @@ def combine_nets(
         arch_model_predictive,
         activ_policy,
         activ_predictive,
+        state_indices_passed,
     )
     # build model
     _, _ = model(tf.random.uniform((1, arch_model_policy[0]), dtype=tf.float32))
