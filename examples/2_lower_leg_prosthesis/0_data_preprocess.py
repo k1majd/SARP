@@ -5,7 +5,10 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
 
-    walking_ranges = np.array([[20710, 23460],[7185, 9640], [9995, 11150]])
+    # walking_ranges = np.array([[20710, 23460],[7185, 9640], [9995, 11150]])
+    # walking_ranges = np.array([[9995, 11150], [11500, 12530],[7185, 9640]])
+    walking_ranges = np.array([[20710+1000, 20710+2000],[20710+100, 20710+1000], [20710+2000, 23460]])
+    # walking_ranges = np.array([[24303+1000, 24303+2000],[24303, 24303+1000], [24303+2000, 27993]])
 
     data_dir = os.path.dirname(os.path.realpath(__file__)) + f"/data/expert_data/full_walk_data1.csv"
     with open(data_dir) as csv_file:
@@ -41,18 +44,21 @@ if __name__ == "__main__":
         )/dfemur_dtibia[walking_ranges[2, 0]:walking_ranges[2, 1]].std(0)
     
     # force
-    force_train = (
-        force[walking_ranges[0, 0]:walking_ranges[0, 1]]
-        - force[walking_ranges[0, 0]:walking_ranges[0, 1]].mean(0)
-        )/force[walking_ranges[0, 0]:walking_ranges[0, 1]].std(0)
-    force_validation = (
-        force[walking_ranges[1, 0]:walking_ranges[1, 1]]
-        - force[walking_ranges[1, 0]:walking_ranges[1, 1]].mean(0)
-        )/force[walking_ranges[1, 0]:walking_ranges[1, 1]].std(0)
-    force_test = (
-        force[walking_ranges[2, 0]:walking_ranges[2, 1]]
-        - force[walking_ranges[2, 0]:walking_ranges[2, 1]].mean(0)
-        )/force[walking_ranges[2, 0]:walking_ranges[2, 1]].std(0)
+    # force_train = (
+    #     force[walking_ranges[0, 0]:walking_ranges[0, 1]]
+    #     - force[walking_ranges[0, 0]:walking_ranges[0, 1]].mean(0)
+    #     )/force[walking_ranges[0, 0]:walking_ranges[0, 1]].std(0)
+    # force_validation = (
+    #     force[walking_ranges[1, 0]:walking_ranges[1, 1]]
+    #     - force[walking_ranges[1, 0]:walking_ranges[1, 1]].mean(0)
+    #     )/force[walking_ranges[1, 0]:walking_ranges[1, 1]].std(0)
+    # force_test = (
+    #     force[walking_ranges[2, 0]:walking_ranges[2, 1]]
+    #     - force[walking_ranges[2, 0]:walking_ranges[2, 1]].mean(0)
+    #     )/force[walking_ranges[2, 0]:walking_ranges[2, 1]].std(0)
+    force_train =force[walking_ranges[0, 0]:walking_ranges[0, 1]]
+    force_validation = force[walking_ranges[1, 0]:walking_ranges[1, 1]]
+    force_test = force[walking_ranges[2, 0]:walking_ranges[2, 1]]
     
 
     # save train data 
