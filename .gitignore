@@ -38,4 +38,5 @@ examples/1_hospital_simulation/data/wander_data/sample8
 examples/1_hospital_simulation/data/wander_data/sample9
 poetry.lock
 *.csv
+.DS_Store
 examples/2_lower_leg_prosthesis/trained_models
