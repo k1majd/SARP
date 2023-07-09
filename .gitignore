@@ -39,3 +39,4 @@ examples/1_hospital_simulation/data/wander_data/sample9
 poetry.lock
 *.csv
 examples/2_lower_leg_prosthesis/trained_models
+net_finetune*
