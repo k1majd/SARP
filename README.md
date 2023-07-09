@@ -12,5 +12,11 @@ We use the Poetry tool which is a dependency management and packaging tool in Py
 
     poetry install
 
+## Quick Start
+Before running the examples, please download the full dataset from: [dataset link](https://drive.google.com/drive/folders/1SELQ2BnnqfwDSjb59tPyDQ6iak-kcBTm?usp=sharing). Locate each `/data` folder under the main subfolder for each example. 
 
-Download data from https://drive.google.com/drive/folders/1SELQ2BnnqfwDSjb59tPyDQ6iak-kcBTm?usp=sharing
+### Training
+Scripts for pre-training the policy and predictive models are located under each example subfolder. For example, to pre-train a policy for the hospital showcase run [0_pretrain_policy.py](examples/1_hospital_simulation/0_pretrain_policy.py). Also, to train the predictive model run [1_pretrain_predictive_model.py](examples/1_hospital_simulation/1_pretrain_predictive_model.py).
+
+### Repairing with SARP
+For learning how to repair using SARP, please follow the repair notebook tutorials under each example subfolder: [2_sarp_repair.ipynb](examples/1_hospital_simulation/2_sarp_repair.ipynb), [3_sarp_repair_full_obs.ipynb](examples/2_lower_leg_prosthesis/3_sarp_repair_full_obs.ipynb), and [3_sarp_repair_partial_obs.ipynb](examples/2_lower_leg_prosthesis/3_sarp_repair_partial_obs.ipynb).
