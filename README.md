@@ -1,4 +1,5 @@
 # Safety-Aware Repair with Predictive models
+![teaser](assets/teaser4.jpg)
 ## Introduction
 This repo includes the code for Safety-Aware Repair with Predictive models (SARP).
 The proposed method combines behavioral cloning with neural network repair in a two-step supervised learning framework. 
