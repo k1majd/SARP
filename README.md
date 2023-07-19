@@ -14,6 +14,7 @@ We use the Poetry tool which is a dependency management and packaging tool in Py
     poetry install
 
 ## Quick Start
+![quick_start](assets/quick_run_demo.gif)
 Before running the examples, please download the full dataset from: [dataset link](https://drive.google.com/drive/folders/1SELQ2BnnqfwDSjb59tPyDQ6iak-kcBTm?usp=sharing). Locate each `/data` folder under the main subfolder for each example. 
 
 ### Training
